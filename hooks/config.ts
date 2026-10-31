@@ -85,6 +85,16 @@ export async function readLocalOffset($: Dollar): Promise<void> {
 
 export const configProblem = (): string | null => problem
 
+// A name another plugin holds is skipped with a toast, so the rest of the start still runs.
+export async function registerCommand($: Dollar, spec: Parameters<Dollar['command']['register']>[0]): Promise<void> {
+  try {
+    await $.command.register(spec)
+  } catch (err) {
+    const why = (err instanceof Error ? err.message : String(err)).split('refused: ').pop()
+    $.ui.toast(t('/{name} is not added: {why}', { name: spec.name, why: why ?? '' }))
+  }
+}
+
 export const shortRepo = (repo: string): string => {
   const prefix = config.github.shortenRepos.find(p => p && repo.startsWith(p) && repo.length > p.length)
   return prefix ? repo.slice(prefix.length) : repo

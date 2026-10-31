@@ -2,7 +2,17 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface as Dollar, Frozen, On, RenderChildren, RenderInput } from 'claude-code'
 
 import type { DayLog, Issue, Pr, Snapshot, SourceError, TaskLink } from '../types'
-import { configProblem, currentConfig, loadConfig, localOffset, phrases, readLocalOffset, shortRepo, t } from './config'
+import {
+  configProblem,
+  currentConfig,
+  loadConfig,
+  localOffset,
+  phrases,
+  readLocalOffset,
+  registerCommand,
+  shortRepo,
+  t,
+} from './config'
 
 const PLUGIN = 'session-companion'
 const PANE = 'work'
@@ -455,8 +465,8 @@ export async function tasksBand($: Dollar, e: Frozen<RenderInput<'AbovePrompt'>>
 export async function startTasks($: Dollar): Promise<void> {
     await loadConfig($)
     await readLocalOffset($)
-    await $.command.register({ name: 'work', description: t('Open or close the "My work" pane') })
-    await $.command.register({ name: 'task', description: t('Link this session to a Jira issue: /task ABC-123') })
+    await registerCommand($, { name: 'work', description: t('Open or close the "My work" pane') })
+    await registerCommand($, { name: 'task', description: t('Link this session to a Jira issue: /task ABC-123') })
     await loadLinks($)
     if (jiraOn()) await $.tool.register(LINK_TOOL_SPEC)
     const own = await ownSession($).catch(() => null)
@@ -781,7 +791,7 @@ export function registerTasks(on: On): void {
           <Box flexGrow={1} flexShrink={1} minWidth={0}>
             <Input
               key="search"
-              placeholder={t('Search tasks and PRs: ABC-12, #519, text')}
+              placeholder={t('Search tasks and PRs')}
               value={typed}
               onInput={(value: string) => setQuery($, value)}
               onSubmit={(value: string) => setQuery($, value)}

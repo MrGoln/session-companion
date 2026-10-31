@@ -85,6 +85,8 @@ function engine(
   jiraRuns: { argv: string[]; env: Record<string, string> }[] = [],
   shared?: Map<string, unknown>,
   config: string = CONFIG,
+  // A command name another plugin holds, and what the plugin registered.
+  registry: { taken?: string; commands?: string[]; tools?: string[] } = {},
 ) {
   // A shared store lets a test play another open session by changing it.
   if (shared) {
@@ -100,14 +102,22 @@ function engine(
   on('fs.write', () => ({ value: undefined }))
   on('session.id', () => ({ value: 'transcript-1' }))
   const clock = mock.clock(on, { now: NOW })
-  on('command.register', (_, e) => ({ value: { command: e.name } }))
+  on('command.register', (_, e) => {
+    if (e.name === registry.taken)
+      return { deny: `session-companion: $.command.register: "/${e.name}" refused: the plugin my-work registered it already` } as never
+    registry.commands?.push(e.name)
+    return { value: { command: e.name } }
+  })
   on('ui.open', (_, e) => {
     opened.push(e.id)
     return { value: { isPlaced: true } }
   })
   on('ui.close', () => ({ value: undefined }))
   on('ui.panes', () => ({ value: [] }))
-  on('tool.register', () => ({ value: undefined as never }))
+  on('tool.register', (_, e) => {
+    registry.tools?.push(e.name)
+    return { value: undefined as never }
+  })
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('mcp.call', (_, e) => {
     if (e.server === 'ccd_session_mgmt' && e.tool === 'get_session') {
@@ -664,4 +674,21 @@ test('a question that names a task links nothing: "is Bob still working on ABC-8
   await $.prompt.submit({ text: "I'm working on ABC-82 today" } as never)
   await clock.settle()
   expect(toasts.join(' | ')).toMatch(/ABC-82 linked to session/)
+})
+
+test('a command another plugin holds is skipped with a toast; the rest of the start runs', async ($, on) => {
+  const commands: string[] = []
+  const tools: string[] = []
+  const clock = engine(on, undefined, undefined, [], undefined, [], undefined, CONFIG, { taken: 'task', commands, tools })
+  const toasts: string[] = []
+  on('ui.toast', (_, e) => {
+    toasts.push(String(e.text))
+    return { value: undefined }
+  })
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await clock.settle()
+
+  expect(commands).toEqual(['work', 'notes', 'note'])
+  expect(tools).toEqual(['link_task', 'add_note', 'show_notes'])
+  expect(toasts).toEqual(['/task is not added: the plugin my-work registered it already'])
 })

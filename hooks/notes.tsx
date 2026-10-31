@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface as Dollar, Frozen, On, RenderChildren, RenderInput, UiOpenResult } from 'claude-code'
 
 import type { Note, NoteKind } from '../types'
-import { currentConfig, loadConfig, localOffset, phrases, readLocalOffset, shortRepo, t } from './config'
+import { currentConfig, loadConfig, localOffset, phrases, readLocalOffset, registerCommand, shortRepo, t } from './config'
 
 const PLUGIN = 'session-companion'
 const PANE = 'notes'
@@ -275,8 +275,8 @@ export async function notesButton($: Dollar, e: Frozen<RenderInput<'AbovePrompt'
 export async function startNotes($: Dollar): Promise<void> {
   await loadConfig($)
   await readLocalOffset($)
-  await $.command.register({ name: 'notes', description: t('Open or close the "Session notes" pane') })
-  await $.command.register({
+  await registerCommand($, { name: 'notes', description: t('Open or close the "Session notes" pane') })
+  await registerCommand($, {
     name: 'note',
     description: t('Add a note to this session: /note text, link'),
     argumentHint: t('text and link'),

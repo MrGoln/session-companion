@@ -1,16 +1,21 @@
-import type { Register } from 'claude-code'
+import type { EngineInterface as Dollar, Register } from 'claude-code'
 
 import { notesButton, notesPaneClosed, notesPromptContext, notesTool, registerNotes, startNotes } from './notes'
 import { registerTasks, startTasks, tasksBand, tasksPaneClosed, tasksPromptContext, tasksTool } from './tasks'
+
+function startFailed($: Dollar, err: unknown): void {
+  $.ui.toast(`session-companion: ${err instanceof Error ? err.message : String(err)}`)
+}
 
 // A plugin may hook an event once, so the events both modules need are wired here.
 export const register: Register = on => {
   registerTasks(on)
   registerNotes(on)
 
+  // Each pane starts on its own: a failure in one leaves the other and the session as they are.
   on('session.start', async ($, e, next) => {
-    await startTasks($)
-    await startNotes($)
+    await startTasks($).catch((err: unknown) => startFailed($, err))
+    await startNotes($).catch((err: unknown) => startFailed($, err))
     return next(e)
   })
 
