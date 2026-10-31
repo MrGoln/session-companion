@@ -273,7 +273,7 @@ test('the button above the prompt toggles the pane and shows a summary while it 
     })
     expect((await band.find({ type: 'Button', key: 'toggle-work' }))?.text).toBe('▸ My work')
     expect(await band.find({ type: 'Text', text: 'other mod' })).toBeDefined()
-    expect(await band.find({ type: 'Text', text: /2 tasks · 2 PRs · 1 ✗ CI · 1 review requests for you · 2h 00m of 8h/ })).toBeDefined()
+    expect(await band.find({ type: 'Text', text: /2 tasks · 2 PRs · 1 ✗ CI · 1 to review · 2h 00m of 8h/ })).toBeDefined()
 
     await band.press({ key: 'toggle-work' })
     expect((await band.find({ type: 'Button', key: 'toggle-work' }))?.text).toBe('▾ My work')

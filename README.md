@@ -14,7 +14,7 @@ Jira is optional: without it the work pane shows your PRs alone.
 <table>
   <tr>
     <td valign="top"><img src="assets/work-pane.png" alt="The My work pane: hours logged today, Jira tasks by status, PRs grouped by CI and review state" width="420"></td>
-    <td valign="top"><img src="assets/notes-pane.png" alt="The Session notes pane: a command, a PR link, a chat thread and a decision saved during the session" width="420"></td>
+    <td valign="top"><img src="assets/notes-pane.png" alt="The Session notes pane: a command, a PR link, a chat thread and a decision saved with /note" width="420"></td>
   </tr>
 </table>
 

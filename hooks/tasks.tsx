@@ -433,7 +433,7 @@ export async function tasksBand($: Dollar, e: Frozen<RenderInput<'AbovePrompt'>>
         snap.issues && t('{n} tasks', { n: snap.issues.filter(i => i.category !== 'done').length }),
         snap.prs && t('{n} PRs', { n: snap.prs.length }),
         failed > 0 && t('{n} ✗ CI', { n: failed }),
-        forMe > 0 && t('{n} review requests for you', { n: forMe }),
+        forMe > 0 && t('{n} to review', { n: forMe }),
         snap.loggedSeconds !== null && t('{done} of {hours}h', { done: hm(snap.loggedSeconds), hours }),
       ].filter(Boolean)
     : []
@@ -733,7 +733,7 @@ export function registerTasks(on: On): void {
 
         <Box flexDirection="row" gap={1} marginTop={1}>
           {hasJira && tile(t('hours'), logged === null ? '—' : hm(logged), hoursColor)}
-          {hasJira && tile(t('tasks'), count(snap.issues?.length), 'suggestion')}
+          {hasJira && tile(t('tasks'), count(snap.issues?.filter(i => i.category !== 'done').length), 'suggestion')}
           {tile(failed ? t('CI failed') : t('PRs'), failed ? String(failed) : count(snap.prs?.length), failed ? 'error' : 'success')}
         </Box>
 
