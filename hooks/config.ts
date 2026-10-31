@@ -10,11 +10,11 @@ export const DEFAULT_CONFIG: Config = {
   notes: { threadUrls: ['^https://[^/]+\\.slack\\.com/archives/[^/]+/p\\d+'] },
   language: {
     startWords: [
-      "start(?:ing|ed)?(?:\\s+work(?:ing)?)?\\s+on",
-      "let'?s\\s+(?:work\\s+on|do|take)",
-      'pick(?:ing)?\\s+up',
-      'tak(?:e|ing)\\s+on',
-      'work(?:ing)?\\s+on',
+      "let'?s\\s+(?:start|get\\s+started|work)\\s+on",
+      "let'?s\\s+(?:do|take)",
+      "i'?m\\s+(?:starting|working|taking)\\s+on",
+      "i'?ll\\s+(?:start|work)\\s+on",
+      "i'?ll\\s+take",
     ],
     rememberWords: [
       'remember\\s+(?:this|that)',
@@ -72,6 +72,15 @@ export function phrases(words: string[]): RegExp | null {
     }
   })
   return valid.length ? new RegExp(`(?:^|[^\\p{L}])(?:${valid.join('|')})(?![\\p{L}])`, 'iu') : null
+}
+
+// The machine's offset from `date`, shared by both panes; the work pane reads it again every round.
+let localOffsetMs = -new Date().getTimezoneOffset() * 60_000
+export const localOffset = (): number => localOffsetMs
+export async function readLocalOffset($: Dollar): Promise<void> {
+  const run = await $.process.run(['date', '+%z']).catch(() => null)
+  const zone = /^([+-])(\d{2})(\d{2})$/.exec(run?.stdout.trim() ?? '')
+  if (zone) localOffsetMs = (zone[1] === '-' ? -1 : 1) * (Number(zone[2]) * 60 + Number(zone[3])) * 60_000
 }
 
 export const configProblem = (): string | null => problem

@@ -25,7 +25,7 @@ class TextsTest(unittest.TestCase):
     def test_every_pane_text_is_listed_with_its_translation(self):
         out, err = self.run_texts({"language": {"text": {"Tasks": "Aufgaben", "Gone": "Weg"}}})
         self.assertEqual(out["Tasks"], "Aufgaben")
-        for text in ("My work", "Session notes", 'Nothing matches "{q}".', "Drafts", "To me", "Links"):
+        for text in ("My work", "Session notes", 'Nothing matches "{q}".', "Drafts", "For you", "Links"):
             self.assertEqual(out[text], "")
         self.assertIn('"Gone"', err)
 

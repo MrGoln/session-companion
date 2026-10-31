@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface as Dollar, Frozen, On, RenderChildren, RenderInput, UiOpenResult } from 'claude-code'
 
 import type { Note, NoteKind } from '../types'
-import { currentConfig, loadConfig, phrases, shortRepo, t } from './config'
+import { currentConfig, loadConfig, localOffset, phrases, readLocalOffset, shortRepo, t } from './config'
 
 const PLUGIN = 'session-companion'
 const PANE = 'notes'
@@ -70,15 +70,9 @@ function matches(q: string, note: Note): boolean {
   return q.toLowerCase().split(/\s+/).filter(Boolean).every(word => hay.includes(word))
 }
 
-let localOffsetMs = -new Date().getTimezoneOffset() * 60_000
-async function readLocalOffset($: Dollar): Promise<void> {
-  const run = await $.process.run(['date', '+%z']).catch(() => null)
-  const zone = /^([+-])(\d{2})(\d{2})$/.exec(run?.stdout.trim() ?? '')
-  if (zone) localOffsetMs = (zone[1] === '-' ? -1 : 1) * (Number(zone[2]) * 60 + Number(zone[3])) * 60_000
-}
 function stamp(at: number, now: number): string {
-  const local = new Date(at + localOffsetMs).toISOString()
-  const isToday = local.slice(0, 10) === new Date(now + localOffsetMs).toISOString().slice(0, 10)
+  const local = new Date(at + localOffset()).toISOString()
+  const isToday = local.slice(0, 10) === new Date(now + localOffset()).toISOString().slice(0, 10)
   return isToday ? local.slice(11, 16) : `${local.slice(8, 10)}.${local.slice(5, 7)} ${local.slice(11, 16)}`
 }
 
@@ -273,7 +267,7 @@ export async function notesButton($: Dollar, e: Frozen<RenderInput<'AbovePrompt'
   const count = (await read($, notes)).length
   return (
     <Button key="toggle-notes" plain onPress={() => void togglePane($)}>
-      {open ? t('▾ Hide notes') : t('▸ Notes')} {count > 0 && <Text dimColor>{String(count)}</Text>}
+      {open ? t('▾ Notes') : t('▸ Notes')} {count > 0 && <Text dimColor>{String(count)}</Text>}
     </Button>
   )
 }
@@ -359,7 +353,7 @@ export function registerNotes(on: On): void {
     if (!args) return { text: t('Write the note: /note we write to staging first, https://…') }
     try {
       const { note } = await addNote($, { text: args })
-      return { text: t('Note saved: {text}', { text: describe(note) }) }
+      return { text: t('Note saved: {text}', { text: note.url ? `${note.text} — ${note.url}` : note.text }) }
     } catch (err) {
       return { text: t('Note not saved: {why}', { why: err instanceof Error ? err.message : String(err) }) }
     }

@@ -226,7 +226,7 @@ test('the review tab groups PRs awaiting me by who was asked', async ($, on) => 
     await ui.press({ key: 'tab-review' })
     expect(await ui.find({ type: 'Link', text: 'api#479' })).toBeUndefined()
     expect(await ui.find({ type: 'Link', text: 'api#501' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /To me · 1/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /For you · 1/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /To my teams · 1/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /api#398 ⚠ 12d @octocat/ })).toBeDefined()
     // Bots start folded.
@@ -273,10 +273,10 @@ test('the button above the prompt toggles the pane and shows a summary while it 
     })
     expect((await band.find({ type: 'Button', key: 'toggle-work' }))?.text).toBe('▸ My work')
     expect(await band.find({ type: 'Text', text: 'other mod' })).toBeDefined()
-    expect(await band.find({ type: 'Text', text: /2 tasks · 2 PRs · 1 ✗ CI · 1 reviews on me · 2h 00m of 8h/ })).toBeDefined()
+    expect(await band.find({ type: 'Text', text: /2 tasks · 2 PRs · 1 ✗ CI · 1 review requests for you · 2h 00m of 8h/ })).toBeDefined()
 
     await band.press({ key: 'toggle-work' })
-    expect((await band.find({ type: 'Button', key: 'toggle-work' }))?.text).toBe('▾ Hide work')
+    expect((await band.find({ type: 'Button', key: 'toggle-work' }))?.text).toBe('▾ My work')
     await band.press({ key: 'toggle-work' })
     expect((await band.find({ type: 'Button', key: 'toggle-work' }))?.text).toBe('▸ My work')
     await band.unmount()
@@ -644,4 +644,24 @@ test('the language settings give the start words and the pane text in the user l
   expect(await ui.find({ type: 'Text', text: 'Aufgaben' })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: 'Tasks' })).toBeUndefined()
   await ui.unmount()
+})
+
+test('a question that names a task links nothing: "is Bob still working on ABC-82?"', async ($, on) => {
+  const clock = engine(on)
+  const toasts: string[] = []
+  on('ui.toast', (_, e) => {
+    toasts.push(JSON.stringify(e))
+    return { value: undefined }
+  })
+  on('prompt.submit', (_, e) => ({ text: e.text }))
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await clock.settle()
+
+  await $.prompt.submit({ text: 'is Bob still working on ABC-82?' } as never)
+  await $.prompt.submit({ text: "I'm working on ABC-82? no, let's check first" } as never)
+  await clock.settle()
+  expect(toasts).toEqual([])
+  await $.prompt.submit({ text: "I'm working on ABC-82 today" } as never)
+  await clock.settle()
+  expect(toasts.join(' | ')).toMatch(/ABC-82 linked to session/)
 })

@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface as Dollar, Frozen, On, RenderChildren, RenderInput } from 'claude-code'
 
 import type { DayLog, Issue, Pr, Snapshot, SourceError, TaskLink } from '../types'
-import { configProblem, currentConfig, loadConfig, phrases, shortRepo, t } from './config'
+import { configProblem, currentConfig, loadConfig, localOffset, phrases, readLocalOffset, shortRepo, t } from './config'
 
 const PLUGIN = 'session-companion'
 const PANE = 'work'
@@ -12,7 +12,6 @@ const jiraOn = () => !!currentConfig().jira.url
 // Jira's own day: worklogs are stamped in its zone, which may differ from the machine's.
 const jiraOffsetMs = () => currentConfig().jira.offsetMinutes * 60_000
 
-let localOffsetMs = -new Date().getTimezoneOffset() * 60_000
 
 const snapshot = atom({ plugin: 'session-companion', key: 'snapshot' } as const, null)
 const isLoading = atom({ plugin: 'session-companion', key: 'isLoading' } as const, false)
@@ -135,7 +134,7 @@ function explain(source: SourceError['source'], err: unknown): SourceError {
   const raw = err instanceof Error ? err.message : String(err)
   let message = raw.split('\n')[0]!.slice(0, 160)
   if (/classifier|auto mode/i.test(raw)) {
-    message = t('auto mode refused the request from the plugin; allow it in settings.json')
+    message = t('auto mode blocked this request: {why}; allow it when Claude Code asks, or under permissions in ~/.claude/settings.json', { why: message })
   } else if (/ENOENT|command not found|executable file not found/i.test(raw) && source === 'GitHub') {
     message = t('gh is not installed: install the GitHub CLI, then run gh auth login')
   } else if (/gh auth|401|Bad credentials/i.test(raw) && source === 'GitHub') {
@@ -238,13 +237,8 @@ const hm = (s: number) => {
   const m = Math.floor((s % 3600) / 60)
   return h ? t('{h}h {m}m', { h, m: String(m).padStart(2, '0') }) : t('{m}m', { m })
 }
-const clock = (ms: number) => new Date(ms + localOffsetMs).toISOString().slice(11, 16)
+const clock = (ms: number) => new Date(ms + localOffset()).toISOString().slice(11, 16)
 
-async function readLocalOffset($: Dollar): Promise<void> {
-  const run = await $.process.run(['date', '+%z']).catch(() => null)
-  const zone = /^([+-])(\d{2})(\d{2})$/.exec(run?.stdout.trim() ?? '')
-  if (zone) localOffsetMs = (zone[1] === '-' ? -1 : 1) * (Number(zone[2]) * 60 + Number(zone[3])) * 60_000
-}
 // "feat(scope)!: ABC-1 Title" -> "Title"; the scope and key are noise in a narrow pane.
 const shortTitle = (title: string) =>
   title.replace(/^\w+(\([^)]*\))?!?:\s*/, '').replace(/^[A-Z]+-\d+\s+/, '')
@@ -283,7 +277,7 @@ async function pickTab($: Dollar, tab: 'mine' | 'review'): Promise<void> {
 }
 
 const AUDIENCE: Record<NonNullable<Pr['audience']>, { order: number; label: () => string; color: string }> = {
-  me: { order: 0, label: () => t('To me'), color: 'claude' },
+  me: { order: 0, label: () => t('For you'), color: 'claude' },
   team: { order: 1, label: () => t('To my teams'), color: 'suggestion' },
   bot: { order: 2, label: () => t('Bots'), color: 'inactive' },
 }
@@ -336,11 +330,14 @@ function taskKey(text: string, projects: Set<string>): string | null {
 }
 
 // "Let's start on ABC-12" and the like: the key that follows a start word, within the same sentence.
+// A question ("is Bob still working on ABC-12?") links nothing.
 function startedTask(text: string, projects: Set<string>): string | null {
   const start = phrases(currentConfig().language.startWords)?.exec(text)
   if (!start) return null
-  const rest = text.slice(start.index + start[0].length).split(/[.!?\n]/)[0] ?? ''
-  return taskKey(rest, projects)
+  const after = text.slice(start.index + start[0].length)
+  const end = after.search(/[.!?\n]/)
+  if (end >= 0 && after[end] === '?') return null
+  return taskKey(end >= 0 ? after.slice(0, end) : after, projects)
 }
 
 // The store is shared by every open session; this session's copy may miss links made elsewhere.
@@ -352,8 +349,8 @@ async function loadLinks($: Dollar): Promise<Record<string, TaskLink>> {
 }
 
 async function linkSession($: Dollar, key: string): Promise<string> {
-  const own = await ownSession($)
-  if (!own?.link) throw new Error('the app gave no link to this session')
+  const own = await ownSession($).catch(() => null)
+  if (!own?.link) throw new Error(t('linking needs the Claude desktop app'))
   const next = {
     ...(await loadLinks($)),
     [key]: { sessionId: String(own.sessionId), link: String(own.link), title: String(own.title ?? '') },
@@ -373,9 +370,9 @@ const LINK_TOOL = 'link_task'
 const LINK_TOOL_SPEC = {
   name: LINK_TOOL,
   description:
-    'Link this Code session to a Jira issue: the issue in the "My work" pane gets a button that opens this session. ' +
-    'Call it when the user says to work on an issue. If the issue only shows in the context ' +
-    '(a key in the branch, a PR or the task), first ask the user once whether to link the session to it.',
+    'Link this session to a Jira issue: the issue in the "My work" pane gets a button that opens this session. ' +
+    'Call it when the user says to work on an issue. If the key only appears in the branch name, a PR title ' +
+    "or the user's request, first ask the user once whether to link the session to it.",
   inputSchema: {
     type: 'object',
     properties: { key: { type: 'string', description: 'The Jira issue key, for example ABC-123' } },
@@ -436,7 +433,7 @@ export async function tasksBand($: Dollar, e: Frozen<RenderInput<'AbovePrompt'>>
         snap.issues && t('{n} tasks', { n: snap.issues.filter(i => i.category !== 'done').length }),
         snap.prs && t('{n} PRs', { n: snap.prs.length }),
         failed > 0 && t('{n} ✗ CI', { n: failed }),
-        forMe > 0 && t('{n} reviews on me', { n: forMe }),
+        forMe > 0 && t('{n} review requests for you', { n: forMe }),
         snap.loggedSeconds !== null && t('{done} of {hours}h', { done: hm(snap.loggedSeconds), hours }),
       ].filter(Boolean)
     : []
@@ -444,7 +441,7 @@ export async function tasksBand($: Dollar, e: Frozen<RenderInput<'AbovePrompt'>>
   return (
     <Box flexDirection="row" gap={1} alignItems="center" flexShrink={1} minWidth={0}>
       <Button key="toggle-work" plain onPress={() => void togglePane($)}>
-        {open ? t('▾ Hide work') : t('▸ My work')}
+        {open ? t('▾ My work') : t('▸ My work')}
       </Button>
       {!open && summary.length > 0 && (
         <Text dimColor size="footnote" wrap="truncate-end">
@@ -766,7 +763,7 @@ export function registerTasks(on: On): void {
                   )}
                 </Box>
                 <Text dimColor size="footnote">
-                  {isDone ? t('✓ day closed') : t('{left} to go · worklog skill', { left: hm(DAY_SECONDS - logged) })}
+                  {isDone ? t('✓ day closed') : t('{left} left to log · ask Claude to log time', { left: hm(DAY_SECONDS - logged) })}
                 </Text>
                 {snap.week && (
                   <Box flexDirection="column" marginTop={1}>
@@ -834,13 +831,13 @@ export function registerTasks(on: On): void {
 
         {card(
           'prs',
-          t('PR'),
+          t('PRs'),
           <Text>
             <Text dimColor>{prs === null ? t('no data') : t('mine {n}', { n: prs.length })}</Text>
             {failed > 0 && <Text color="error">{` · ${failed} ✗`}</Text>}
             {ready > 0 && <Text color="success">{` · ${ready} ✓`}</Text>}
             {reviews !== null && <Text dimColor>{` · ${t('reviews {n}', { n: reviews.length })}`}</Text>}
-            {forMe > 0 && <Text color="claude">{` · ${t('on me {n}', { n: forMe })}`}</Text>}
+            {forMe > 0 && <Text color="claude">{` · ${t('for you {n}', { n: forMe })}`}</Text>}
           </Text>,
           failed ? 'error' : forMe ? 'claude' : 'success',
           () => (

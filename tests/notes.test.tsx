@@ -205,7 +205,7 @@ test('the band button sits right of what other mods draw and toggles the pane', 
     expect(await band.find({ type: 'Text', text: 'other mod' })).toBeDefined()
     expect((await band.find({ type: 'Button', key: 'toggle-notes' }))?.text).toBe('▸ Notes 1')
     await band.press({ key: 'toggle-notes' })
-    expect((await band.find({ type: 'Button', key: 'toggle-notes' }))?.text).toMatch(/^▾ Hide notes/)
+    expect((await band.find({ type: 'Button', key: 'toggle-notes' }))?.text).toMatch(/^▾ Notes/)
     await band.press({ key: 'toggle-notes' })
     await band.unmount()
   }
@@ -250,7 +250,7 @@ test('/note adds a note with the link from its text', async ($, on) => {
   engine(on)
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
   const ran = await $.command.run({ command: 'note', args: `important thread ${THREAD}` } as never)
-  expect(ran as unknown).toMatchObject({ text: `Note saved: [thread] important thread — ${THREAD}` })
+  expect(ran as unknown).toMatchObject({ text: `Note saved: important thread — ${THREAD}` })
 })
 
 test('"remember this" and a new work link get one note beside the prompt', async ($, on) => {

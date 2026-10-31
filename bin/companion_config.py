@@ -50,11 +50,11 @@ DEFAULTS: dict[str, Any] = {
     "language": {
         # JavaScript regexes (flags i and u) for "let's start on ABC-12": the key after one links the session.
         "startWords": [
-            r"start(?:ing|ed)?(?:\s+work(?:ing)?)?\s+on",
-            r"let'?s\s+(?:work\s+on|do|take)",
-            r"pick(?:ing)?\s+up",
-            r"tak(?:e|ing)\s+on",
-            r"work(?:ing)?\s+on",
+            r"let'?s\s+(?:start|get\s+started|work)\s+on",
+            r"let'?s\s+(?:do|take)",
+            r"i'?m\s+(?:starting|working|taking)\s+on",
+            r"i'?ll\s+(?:start|work)\s+on",
+            r"i'?ll\s+take",
         ],
         # JavaScript regexes for "remember this": Claude is told to save a note.
         "rememberWords": [
@@ -66,9 +66,9 @@ DEFAULTS: dict[str, Any] = {
         "text": {},
     },
     "worklog": {
-        # The team's worklog guide (shared buckets, required fields, routing), a Markdown file.
+        # The team's worklog guide (shared tasks, required fields, routing), a Markdown file.
         "guide": "",
-        # The person's own guide: ops buckets, meetings, board.
+        # The person's own guide: ops tasks, meetings, board.
         "personalGuide": str(HOME_DIR / "worklog.md"),
         # The last resort for a session with no issue key: a part of its folder path -> KEY.
         "cwdDefaults": {},

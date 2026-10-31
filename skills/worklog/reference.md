@@ -1,7 +1,7 @@
 # Jira API pitfalls
 
 Access goes through this plugin's `bin/jira.py`: Jira Server / Data Center REST API v2 with the user's token.
-Team specifics (shared buckets, required fields, ops bucket recipe) live in the team guide, the user's own in the personal guide; this file holds what holds for any Jira.
+Team specifics (shared tasks, required fields, ops task recipe) live in the team guide, the user's own in the personal guide; this file holds what holds for any Jira.
 
 ## Writing issues
 
@@ -27,4 +27,4 @@ Team specifics (shared buckets, required fields, ops bucket recipe) live in the 
 - Your open work: `assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC`.
 - Current and next sprints: `project = ABC AND (sprint in openSprints() OR sprint in futureSprints())`.
 - Your time logged today: `worklogAuthor = currentUser() AND worklogDate >= startOfDay()`.
-- Existing ops buckets: `project = ABC AND summary ~ "ops"` (use the naming from the team guide).
+- Existing ops tasks: `project = ABC AND summary ~ "ops"` (use the naming from the team guide).

@@ -2,14 +2,14 @@
 
 Copy to `~/.claude/session-companion/worklog.md` (or the path in `worklog.personalGuide`) and fill in your issues.
 
-## My ops buckets
+## My ops tasks
 
 | Issue | Product |
 | --- | --- |
 | ABC-101 | API |
 | ABC-102 | Web app |
 
-## Recurring meetings (Jira time)
+## Recurring meetings (in Jira's time zone)
 
 | Day | Event | Time | Log to |
 | --- | --- | --- | --- |
