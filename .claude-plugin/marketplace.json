@@ -1,0 +1,16 @@
+{
+  "name": "session-companion",
+  "owner": {
+    "name": "MrGoln"
+  },
+  "metadata": {
+    "description": "Jira tasks, PRs with CI and reviews, hours and session notes in panes beside the Claude Code chat"
+  },
+  "plugins": [
+    {
+      "name": "session-companion",
+      "source": "./",
+      "description": "Jira tasks, PRs with CI and reviews, hours and session notes in panes beside the chat"
+    }
+  ]
+}

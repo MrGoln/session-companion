@@ -1,0 +1,14 @@
+{
+  "_comment": "Copy to ~/.claude/session-companion/config.json. Every key is optional; values here win over the team file.",
+  "team": "~/work/team-handbook/session-companion/team.json",
+  "jira": {
+    "url": "https://jira.example.com",
+    "login": "jdoe"
+  },
+  "worklog": {
+    "personalGuide": "~/.claude/session-companion/worklog.md",
+    "cwdDefaults": {
+      "acme-api": "ABC-101"
+    }
+  }
+}

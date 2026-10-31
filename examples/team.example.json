@@ -1,0 +1,23 @@
+{
+  "_comment": "Keep in a repository the team shares; each person points \"team\" in their config.json at it. Paths are relative to this file.",
+  "jira": {
+    "url": "https://jira.example.com",
+    "timezone": "+02:00",
+    "myTasksJql": "assignee = currentUser() AND (issuetype = Task OR issuetype in subTaskIssueTypes()) AND (sprint in openSprints() OR (statusCategory != Done AND status not in (Backlog))) ORDER BY updated DESC",
+    "projects": ["ABC", "OPS"]
+  },
+  "github": {
+    "search": "org:acme",
+    "shortenRepos": ["acme-"]
+  },
+  "workday": { "hours": 8 },
+  "notes": {
+    "threadUrls": [
+      "^https://acme\\.slack\\.com/archives/[^/]+/p\\d+",
+      "^https://chat\\.acme\\.com/[^/]+/pl/[a-z0-9]+"
+    ]
+  },
+  "worklog": {
+    "guide": "team-worklog.md"
+  }
+}

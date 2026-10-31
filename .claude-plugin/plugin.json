@@ -1,0 +1,23 @@
+{
+  "name": "session-companion",
+  "version": "1.0.0",
+  "description": "Panes beside the chat: your Jira tasks, your PRs with CI and reviews, hours logged today, and notes Claude keeps for the session. Links sessions to tasks and logs time from transcripts.",
+  "displayName": "Session Companion",
+  "author": {
+    "name": "MrGoln",
+    "url": "https://github.com/MrGoln"
+  },
+  "homepage": "https://github.com/MrGoln/session-companion",
+  "repository": "https://github.com/MrGoln/session-companion",
+  "license": "MIT",
+  "icon": "./assets/icon.png",
+  "keywords": [
+    "jira",
+    "github",
+    "pull-requests",
+    "notes",
+    "worklog",
+    "pane"
+  ],
+  "types": "./types/index.d.ts"
+}
